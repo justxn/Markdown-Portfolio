@@ -1,0 +1,100 @@
+---
+title: "Homework-7-jab180008"
+author: "Justin Barreras - jab180008"
+date: "4/11/2021"
+output:
+  word_document: default
+  html_document: default
+---
+
+## Homework 7
+```{r}
+library(randomForest)
+library(mltools)
+library(adabag)
+library(fastAdaboost)
+library(xgboost)
+```
+## Analysis
+I was under the impression that most of the data that I tested on would be improved on by the new ensemble methods, however, all of the ensemble methods that were used except for Random Forest performed even remotely well compared to the old algorithms. The old algorithms all had higher correlation and lower mse. Random Forest was different though becaue it had a much higher accuracy and a much higher mcc. The Decision Trees probably performed best because of how the data was split and even in the project the decision tree did the best among the other algorithms. 
+```{r}
+reviews <- readxl::read_excel("capstone_airline_reviews3.xlsx")
+```
+## Cleaning data and Creating Test/Train Sets
+
+```{r}
+reviews <- reviews[,c(7,8,11:17)]
+reviews <- na.omit(reviews)
+```
+
+```{r}
+reviews$recommended <- factor(reviews$recommended)
+reviews$cabin <- factor(reviews$cabin)
+reviews$seat_comfort <- factor(reviews$seat_comfort)
+reviews$cabin_service <- factor(reviews$cabin_service)
+reviews$food_bev <- factor(reviews$food_bev)
+reviews$entertainment <- factor(reviews$entertainment)
+reviews$ground_service <- factor(reviews$ground_service)
+reviews$willing <- ifelse(reviews$value_for_money > 3, 1,0)
+reviews$willing <- factor(reviews$willing)
+reviews$value_for_money <- factor(reviews$value_for_money)
+reviews$traveller_type <- factor(reviews$traveller_type)
+```
+
+```{r}
+set.seed(1234)
+i <- sample(1:nrow(reviews), nrow(reviews)*.75,replace = FALSE)
+train <- reviews[i,]
+test <- reviews[-i,]
+```
+
+## Random Forest
+```{r}
+set.seed(1234)
+rf <- randomForest(recommended~traveller_type+cabin+cabin_service+ground_service+seat_comfort+food_bev+entertainment,data = train, importance = TRUE)
+rf
+```
+
+```{r}
+pred <- predict(rf, newdata=test, type="response")
+acc_rf <- mean(pred==test$recommended)
+mcc_rf <- mcc(factor(pred), test$recommended)
+print(paste("accuracy=", acc_rf))
+print(paste("mcc=", mcc_rf))
+```
+## Boosting
+
+```{r}
+##adab1 <- boosting(recommended~food_bev,data = test, boos=TRUE, mfinal=3,coeflearn = "Breiman",control = rpart.control(maxsurrogate = 0L, maxdepth = 1L))
+```
+
+```{r}
+```
+
+## Adaboost
+```{r}
+set.seed(1234)
+
+##f <- adaboost(recommended~willing, data = train, 5)
+##summary(fadab)
+```
+
+## XGBoost
+```{r}
+train_label <- ifelse(train$recommended=="yes", 1, 0)
+train_matrix <- data.matrix(train[, c(5,6)])
+model <- xgboost(data=train_matrix, label=train_label,
+                 nrounds=100, objective='binary:logistic')
+```
+
+```{r}
+test_label <- ifelse(test$recommended=="yes", 1, 0)
+test_matrix <- data.matrix(test[, c(5,6)])
+probs <- predict(model, test_matrix)
+pred <- ifelse(probs>0.5, 1, 0)
+acc_xg <- mean(pred==test_label)
+mcc_xg <- mcc(pred, test_label)
+print(paste("accuracy=", acc_xg))
+print(paste("mcc=", mcc_xg))
+```
+

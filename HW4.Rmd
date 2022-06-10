@@ -1,0 +1,148 @@
+---
+title: "Homework 4 - jab180008"
+author: "Justin Barreras - jab180008"
+date: "2/21/2021"
+output: html_document
+---
+
+
+## Homework 4
+
+The purpose of this document is to test and use the naive bayes 
+and logistic regression algorithms to manipulate the 
+Breast cancer data set. 
+
+## Step 1
+Load the data.
+```{r}
+library(mlbench)
+data("BreastCancer")
+head(BreastCancer)
+str(BreastCancer)
+```
+```{r}
+ben <- sum(BreastCancer$Class == "benign")/nrow(BreastCancer)
+malig <- sum(BreastCancer$Class == "malignant")/nrow(BreastCancer)
+print(paste("The benign class made up this percent of the total: ", ben))
+print(paste("The malignant class made up this percent of the total", malig))
+```
+1. There are 699 observations of instances
+2. The target column is the Class column as it represents if the cell is cancerous or not
+3. The predictors are mostly quantitative factors of the cells 
+4. 34% of the cells are malignant
+
+## Step 2
+
+Creating the logistic regression model
+```{r}
+set.seed(1234)
+i <- sample(1:nrow(BreastCancer), nrow(BreastCancer)*.75,replace = FALSE)
+train <- BreastCancer[i,]
+test <- BreastCancer[-i,]
+##creating hte model based on size and shape
+glm0 <- glm(BreastCancer$Class~BreastCancer$Cell.size+BreastCancer$Cell.shape, family = "binomial", data = train)
+
+## There was an error in creating the model, however the model did build
+## running summart on glm0 to show it built
+
+summary(glm0)
+```
+I found that the error probably comes from the fitted data.
+The data has not been fitted when it is a factor which causes an error 
+and that is why it says there is a fitting error. 
+https://stackoverflow.com/questions/55891980/error-glm-fit-fitted-probabilities-numerically-0-or-1-occurred 
+
+## Step 3
+Creating two new columns based on the sizes of cell.shape and cell.size
+```{r}
+BreastCancer$Cell.small <- ifelse(BreastCancer$Cell.size == 1, 1, 0)
+BreastCancer$Cell.regular <- ifelse(BreastCancer$Cell.shape == 1,1,0)
+cols <- c("Cell.size","Cell.shape","Cell.small","Cell.regular")
+summary(BreastCancer[cols])
+```
+After summarizing the data into the four columns I think we can
+see a stronger correlation between the data because anything above 1 might
+have a higher factor on the Class.
+
+## Step 4
+Creating a conditional density plot using size and shape of the cells.
+
+```{r}
+par(mfrow=c(1,2))
+cdplot(BreastCancer$Class~BreastCancer$Cell.shape)
+cdplot(BreastCancer$Class~BreastCancer$Cell.size)
+```
+
+As we can now see the graph the cutoff points at size =1 were justified
+for both plots because now we can see that after size 1, the malignancy is
+much higher for both. 
+
+## Step 5
+
+Now I will show that data from the small and regular sizes instead of shape and size. 
+```{r}
+par(mfrow=c(2,2))
+plot(BreastCancer$Class,BreastCancer$Cell.small)
+plot(BreastCancer$Class,BreastCancer$Cell.regular)
+cdplot(BreastCancer$Class~BreastCancer$Cell.small)
+cdplot(BreastCancer$Class~BreastCancer$Cell.regular)
+```
+
+```{r}
+smallM <- sum(BreastCancer$Cell.small == 1 & BreastCancer$Class == "malignant")/nrow(BreastCancer)
+nsmallM <- sum(BreastCancer$Cell.small == 0 & BreastCancer$Class == "malignant")/nrow(BreastCancer)
+regM <- sum(BreastCancer$Cell.regular == 1 & BreastCancer$Class == "malignant")/nrow(BreastCancer)
+nregM <- sum(BreastCancer$Cell.regular == 0 & BreastCancer$Class == "malignant")/nrow(BreastCancer)
+
+print(paste("The amount of non small and non regular size categories combined for almost the total amount of malignant cases: ", nregM))
+print(paste("However, the amount of small and regular cases were both below 1% of the malignant cases with small being higher at this percentage: ", smallM))
+```
+Small and regular were the most accurate predictors in predicting a malignant cell. 
+
+## Step 6
+Dividing the data into two sets. 
+```{r}
+set.seed(1234)
+i <- sample(1:nrow(BreastCancer), nrow(BreastCancer)*.8,replace = FALSE)
+train <- BreastCancer[i,]
+test <- BreastCancer[-i,]
+```
+
+## Step 7
+Creating the model
+```{r}
+glm1 <- glm(BreastCancer$Class~BreastCancer$Cell.small+BreastCancer$Cell.regular, family = "binomial", data = train)
+summary(glm1)
+```
+1. The good predictors that are good are any of the predictors that have small or regular influence on the cell.  
+2. The null deviance is much higher than the residual deviance. This shows that without the intercept that only the predictors are not as good without the intercept. The deviance is also really high so that means the data is not fitting well to the data that was provided.
+3. THe AIC is also a really high number which shows that the data may have overfitted the model. 
+
+##  Step 8 
+Next we will be testing the model on the test data and outputting the matrix as well as the accuracy. 
+
+```{r}
+library("caret")
+p1 <- predict(glm1, newdata=test, type="response")
+
+```
+## Step 11
+```{r}
+library(e1071)
+nb1 <- naiveBayes(BreastCancer$Class~BreastCancer$Cell.small+BreastCancer$Cell.regular, data = train)
+nb1
+```
+a. 65% of the data was benign
+b. There was a 12% chance that a malignant cell was not small
+c. There was a 9% chance that a malignant cell was not regular
+
+## Step 12 
+
+Now we are predicting the Bayes model with test data
+```{r}
+library(caret)
+p2 <- predict(nb1, newdata = test, type = "class")
+confusionMatrix(p2, test$Class)
+```
+
+

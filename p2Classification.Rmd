@@ -1,0 +1,124 @@
+---
+title: "p2Classification"
+author: "Justin Barreras - jab180008"
+date: "3/30/2021"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+# Reccomendation of Airline based on review
+## Loading libraries
+```{r}
+library(tidyr)
+library(e1071)
+library(rpart)
+library(ggplot2)
+library(caret)
+```
+## Loading data
+The data was retrieved from this link: https://www.kaggle.com/efehandanisman/skytrax-airline-reviews
+```{r}
+reviews <- readxl::read_excel("capstone_airline_reviews3.xlsx")
+```
+
+## Cleaing data
+Removing unnecessary rows such as flight location, name of flight, and area of departure. Converting all features to factors since they are all ratings and integer numbers
+```{r}
+reviews <- reviews[,c(7,8,11:17)]
+reviews <- na.omit(reviews)
+```
+
+```{r}
+reviews$recommended <- factor(reviews$recommended)
+reviews$cabin <- factor(reviews$cabin)
+reviews$seat_comfort <- factor(reviews$seat_comfort)
+reviews$cabin_service <- factor(reviews$cabin_service)
+reviews$food_bev <- factor(reviews$food_bev)
+reviews$entertainment <- factor(reviews$entertainment)
+reviews$ground_service <- factor(reviews$ground_service)
+reviews$value_for_money <- factor(reviews$value_for_money)
+reviews$traveller_type <- factor(reviews$traveller_type)
+```
+
+## Data Exploration
+Displaying Names of features, dimensions, a summery of all the data, the first rows, and the values of the first rows. 
+```{r}
+names(reviews)
+dim(reviews)
+summary(reviews)
+str(reviews)
+head(reviews)
+```
+The following table is a table of the total amounts of reccommendations vs non-reccommendations in the data. 
+```{r}
+ggplot(reviews, aes(x = factor(recommended))) +
+    geom_bar()
+```
+The following graph shows the different ways people have flown in and in the future we are using how they fly as a feature to predict their reccommendation. 
+```{r}
+ggplot(reviews, aes(x = factor(cabin),fill = factor(cabin))) +
+    geom_bar()
+```
+
+## Algorithm 1 - Log Regression(COMFORT)
+After creating a train and test set, I used their entertainment rating, food/bev rating and seat comfort as factors to be recommended. I used these variables because they are miscellaneous and are essentially extras to how you get from point A to point B so in using these variables I will be able to see how people value these things. 
+```{r}
+set.seed(1234)
+i <- sample(1:nrow(reviews), nrow(reviews)*.75,replace = FALSE)
+train <- reviews[i,]
+test <- reviews[-i,]
+
+glm1 <- glm(recommended~entertainment+food_bev+seat_comfort,data = train,family = "binomial")
+p1 <- predict(glm1, newdata = test)
+p1 <- ifelse(p1 > 0.5, "yes", "no")
+confusionMatrix(test$recommended, factor(p1))
+```
+Comfort in the flight has an overall good metric to measure if the customers were willing to recommend the flight and people who did not see this criteria met were likely to not reccommend the flight. The accuracy, sensitivity and specificity were all high 90 measured metrics. 
+
+## Algorithm 2 - Log Regression(WHERE)
+In this log regression I used how the customers fly by using their type of travel and their cabin that they flew to measure how they would recommend the flight. 
+```{r}
+glm2 <- glm(recommended~traveller_type+cabin,data = train,family = "binomial")
+p2 <- predict(glm2, newdata = test)
+p2 <- ifelse(p2 > 0.5, "yes", "no")
+confusionMatrix(test$recommended, factor(p2))
+```
+This algorithm showed that there is not much influence when it comes to how people fly because there was a fairly low accuracy related to how people fly. 
+
+## Algorithm 3 - Naive Bayes
+In this algorithm I used the food/bev rating, entertainment rating, and the value for money rating as the variables because of how I want show how much of a good time affects the rate at which people reccommend the flight with the amount they payed. 
+```{r}
+nb3 <- naiveBayes(recommended~food_bev+entertainment+value_for_money,data = train)
+nb3
+p3 <- predict(nb3,newdata = test, type = "class")
+confusionMatrix(test$recommended,p3)
+```
+This algorithm performed well too as more customers can value a good time and justify paying a certain amount to be accomadated during the flight. The accuracy, specificity, and sensitivity are all high 90+ which shows the model has little error.
+
+## Algorithm 4 - Log Regression(SERVICE)
+I wanted to measure how the overall service measured up to how likely the customers were to recommend the flight. 
+```{r}
+glm4 <- glm(recommended~cabin_service+ground_service,data = train,family = "binomial")
+p4 <- predict(glm4, newdata = test)
+p4 <- ifelse(p4 > 0.5, "yes", "no")
+confusionMatrix(test$recommended, factor(p4))
+```
+This algorithm also performed fairly well as service is one of the most common things to tip off a bad review. It's accuracy, as well as the specificity and sensitivity were all in the high 90s so the model had good factors to measure from. 
+
+## Algorithm 5 - Trees
+In this final algorithm, I used all of the metrics as described from before to measure how the customer might outweigh some low rated things to still recommend the flight. 
+```{r}
+tree5 <- rpart(recommended~traveller_type+cabin+cabin_service+ground_service+seat_comfort+food_bev+entertainment,data = train,method = "class")
+plot(tree5,uniform = TRUE)
+text(tree5,use.n = TRUE, all = TRUE, cex = 0.7)
+p5 <- predict(tree5, newdata = test)
+p5 <- ifelse(p5[,2] > 0.5, "yes","no")
+confusionMatrix(test$recommended,factor(p5))
+```
+This model had a similar outcome to the service only section, but still showed that this model shows that people might give an overall high rating and still recommend even if one of the variables in question might score poorly. 
+
+## Analysis
+Ranking the algorithms: (From best to worst) Log-COMFORT(93), Naive Bayes(92), Log-SERVICE(90), Tree(90), and last Log-WHERE(52).
+I believe the algorithms performed this way mostly because of their respective features. They all measured certain variables in different ways and the COMFORT features scored the highest accuracy over all of the others. This might lead the people to believe that the more comfort they can provide the customers the more business they can bring in. Conversely, it does not matter how the customers fly because they generally care more about how they are accommodated during their flight.

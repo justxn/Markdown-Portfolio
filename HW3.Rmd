@@ -1,0 +1,104 @@
+---
+title: "Homework 3 - jab180008"
+author: "Justin Barreras - jab180008"
+date: "2/14/2021"
+output: html_document
+---
+
+The R Script will use the Indian Graduate school
+dataset to predict the factors at chance of admission. 
+
+## Step 1
+Reading in the data, and display the names and first couple
+data values
+
+```{r}
+df <- read.csv("Admission_Predict.csv", header = TRUE)
+str(df)
+```
+
+## Step 2
+
+Make Research a factor
+```{r}
+df$Research <- factor(df$Research)
+head(df$Research)
+```
+Get rid of serial number
+```{r}
+df <- df[,c(2,3,4,5,6,7,8,9)]
+```
+Add a new binary column (HighChance) if chance.of.admit is >50
+
+```{r}
+df$HighChance <- ifelse(df$Chance.of.Admit>0.5, 1, 0)
+df$HighChance <- factor(df$HighChance)
+```
+Outputting the column names
+```{r}
+names(df)
+```
+Summary of the data
+```{r}
+summary(df)
+```
+The data is not inbalanced because the chance of admit is still somewhat above average. It is not too high to show that there is no difference but it is not too low to not have any effects. 
+
+## Step 3 
+
+Plotting both GRE and Toefl by the chance of admission. 
+```{r}
+plot(df$HighChance, df$GRE.Score)
+plot(df$HighChance, df$TOEFL.Score)
+```
+
+Generally, the Chance of Admission increases with the increase score of 
+both the GRE and TOEFL scores. They might be higher weighted predictors in
+having a higher chance of admission. 
+
+## Step 4
+Creating the test set.
+
+```{r}
+set.seed(1234)
+i <- sample(1:nrow(df), 0.75*nrow(df), replace = FALSE)
+train <- df[i,]
+test <- df[-i,]
+```
+
+## Step 5
+Creating the model and the prediction for the admit data
+```{r}
+glm1 <- glm(HighChance~., data = train, family = "binomial")
+summary(glm1)
+```
+All of the data gives a high error. I believe there is a variable that strongly has an influence in not being able to give a high probability to 
+be admitted. The data is also fitted so there could be high accuracy erros when computing. 
+
+## Step 6 
+Building a new model without the chance.of.admit column
+
+```{r}
+glm2 <- glm(HighChance~.-Chance.of.Admit, data = train,family = "binomial")
+summary(glm2)
+```
+## Step 7
+
+Predicting the probabilities
+```{r}
+probs1 <- predict(glm1, newdata = test,type = "response")
+cor1 <- cor(test$Chance.of.Admit,probs1)
+
+probs2 <- predict(glm2, newdata = test, type = "response")
+cor2 <- cor(test$Chance.of.Admit, probs2)
+```
+
+The correlation between the probability of the first High Chance and the 
+chanceofadmit is 0.6035. The correlation between the second corrected
+set of the data is a higher correlation of 0.6485 which is slightly higher
+than the previous. This also shows to be more accurate so that concludes 
+that the admit has a high correlation to the admission rate. 
+
+## Step 8
+
+N/A did not finish

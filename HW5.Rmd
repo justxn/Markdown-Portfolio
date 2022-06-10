@@ -1,0 +1,100 @@
+---
+title: "jab180008Homework5"
+author: "Justin Barreras - jab180008"
+date: "3/13/2021"
+output: html_document
+---
+# Problem 1
+
+## Step 1
+```{r}
+library(ISLR)
+set.seed(1234)
+i <- sample(1:nrow(Auto), nrow(Auto)*.75, replace = FALSE)
+train <- Auto[i,]
+test <- Auto[-i,]
+```
+## Step 2
+Creating a linear regression model. 
+```{r}
+lm1 <- lm(mpg~cylinders+displacement+horsepower, data = train)
+summary(lm1)
+plot(lm1$residuals)
+```
+
+## Step 3
+Testing on the data set and printing mse and correlation
+```{r}
+pred1 <- predict(lm1, newdata = test)
+mse <- mean((pred1-test$mpg)^2)
+print(paste("The mse is: ", mse))
+cor1 <- cor(pred1, test$mpg)
+print(paste("The correlation of the data is :", cor1))
+```
+## Step 4
+```{r}
+library(caret)
+km1 <- knnreg(train[,2:4],train[,1],k=1)
+pred2 <- predict(km1,test[,2:4])
+corknn <- cor(pred2, test$mpg)
+mseknn <- mean((pred2-test$mpg)^2)
+print(paste("The mse is: ", mseknn))
+print(paste("The correlation of the data is :", corknn))
+```
+## Step 5
+a) The correlation was 4% higher when using the knn algorithm
+b) The mse was also 2.797 squared errors higher in linear regression vs knn
+c) The weights could be slightly off with such a small data set in linear regression while in the knn algorithm they are grouped together with the most closley related data which could make it have a lower error.
+d) While the knn model uses a lower k there will be a higher variance so the data is not very reliant on the data which in k=1 will perform better. As k increases the bias will increase causing it to not be as reliant on the data. 
+
+# Problem 2
+
+## Step 1
+Building testing and training sets
+```{r}
+library(mlbench)
+set.seed(1234)
+data("BreastCancer")
+BreastCancer$Cell.small <- ifelse(BreastCancer$Cell.size == 1, 1, 0)
+BreastCancer$Cell.regular <- ifelse(BreastCancer$Cell.shape == 1,1,0)
+BreastCancer$Cell.regular <- factor(BreastCancer$Cell.regular)
+BreastCancer$Cell.small <- factor(BreastCancer$Cell.small)
+set.seed(1234)
+i <- sample(1:nrow(BreastCancer), nrow(BreastCancer)*.75, replace = FALSE)
+training <- BreastCancer[i,]
+testing <- BreastCancer[-i,]
+```
+
+## Step 2
+Creating cell small and cell regular
+```{r}
+glm1 <- glm(Class~Cell.small+Cell.regular, family = "binomial", data = training)
+summary(glm1)
+```
+## Step 3
+Predicting on the log regression algorithm
+```{r}
+library(caret)
+p1 <- predict(glm1, newdata = testing, type = "response")
+p1 <- factor(ifelse(p1 > 0.5, "malignant","benign"))
+confusionMatrix(p1, testing$Class)
+```
+## Step 4
+Creating the knn algorithm
+```{r}
+library(class)
+kn2 <- knn(train = training[,12:13], testing[,12:13], cl = training$Class, k =1 )
+confusionMatrix(kn2, testing$Class)
+```
+## Step 5
+Using different predictors, 2-6, 8-10 using knn algorithm
+
+```{r}
+cols <- c(2:6,8:10)
+kn3 <- knn(train = training[,cols], test = testing[,cols], cl = training$Class, k = 1)
+confusionMatrix(kn3, testing$Class)
+```
+## Step 6
+
+a) THe knn algorithm and logistic regression algorithm both produced the same value when performed on the data. This is most likely due to the fact that log regression is just like knn when k = 1 because of the simliar bias and variance.
+b) In the results in step 5, the accuracy increased by four points even though specificiy and sensitivity slightly decreased. This is due to the fact that knn used more predictors which left a lesser chance for bias error on the log reg algorithm while knn when k = 1 had less of a bias which showed to have better results. 

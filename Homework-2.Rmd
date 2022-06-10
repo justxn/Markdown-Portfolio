@@ -1,0 +1,116 @@
+---
+title: "Homework 2 - jab180008"
+author: "Justin Barreras - jab180008"
+date: "2/7/2021"
+output: html_document
+---
+## Justin Barreras - Homework 2
+## Step 1
+Load library
+Information on Auto
+Split into training data
+```{r}
+library(ISLR)
+names(Auto)
+summary(Auto)
+set.seed(1234)
+i <- sample(1:nrow(Auto), nrow(Auto)*.75, replace = FALSE)
+train <- Auto[i,]
+test <- Auto[-i,]
+```
+## Step 2
+```{r}
+lm1 <- lm(mpg~horsepower, data=train)
+lmsum <- summary(lm1)
+pred1 <- predict(lm1, newdata = test)
+mse <- mean((pred1-test$mpg)^2)
+print(paste("mse: ", mse))
+```
+## Step 3
+1) mpg = -.1567 * horsepower + 39.6486
+2) There is a strong correlation
+3)It is a negative correlation
+4) They are fairly low so there is little spread among the values
+5) The mse shows that there is a low level of accuracy with the test data
+
+
+
+## Step 4
+```{r}
+lm2 <- (lm(mpg~horsepower, data = test))
+summary(lm2)
+plot(train$mpg~train$horsepower)
+abline(col = "Blue")
+```
+The data somewhat fitting the line shows that there is an ok spread of the residuals by leverage but in the last graph there is not a strong spread that shows variance among the graph. 
+```{r}
+pred98 <- predict(lm2, data.frame(horsepower=98))
+print(paste("The predicted mpg for 98 horsepower is: ", pred98))
+```
+According to the graph this is a fairly accurate prediction of the mpg based on 98 horsepower. 
+
+## Step 5
+```{r}
+pred <- predict(lm1, newdata = test)
+cor1 <- cor(pred, test$mpg)
+print(paste("The correlation of the data is :", cor1))
+```
+This correlation shows a positive correlation between horsepower and mpg. 
+```{r}
+mse2 <- (mean(pred - test$mpg)^2)
+print(paste("The new mse on the test results is: ", mse2))
+```
+This new mse is much more accurate than the old mse of 25 and has a stronger correlation since it is much closer to zero now.
+
+## Step 6
+```{r}
+par(mfrow = (c(2,2)))
+plot(lm2)
+```
+The spreads in the first graph form a sort of funnel well but in the scale-location graph the spread among the fitted values is weak. 
+
+## Step 7
+```{r}
+lm3 <- lm(log(mpg)~horsepower, data = test)
+summary(lm2)
+summary(lm3)
+```
+In the new model using log(mpg) the r-squared value is slightly higher than in the model without the log. This is due to the fact that the log will make the funnel shape of the data in the residuals graph flatten out. 
+
+## Step 8
+```{r}
+plot(lm3)
+abline(h = 0, col="blue")
+```
+
+The abline does not fit the data well in the following graphs due to the fact that the log did not flatten out the data.
+
+## Step 9
+```{r}
+pred2 = predict(lm3, newdata = test)
+cor2 <- cor(pred2, log(test$mpg))
+mse3 <- mean((pred2 - log(test$mpg))^2)
+print(paste("The correlation of the log of mpg is now: " ,cor2))
+print(paste("The new mse of the log of mpg is now: " , mse3))
+```
+The numbers have been reduced even further to show the high accuracy against the test data. 
+
+## Step 10
+```{r}
+par(mfrow = (c(2,2)))
+plot(lm3)
+```
+The graphs above show to have a much lower spread around all of the graphs in comparison to step 6. 
+
+## Part 2 Multiple Linear Regression
+## Step 1
+```{r}
+pairs(Auto)
+```
+mpg = -displacement, -horsepower, -weight
+cylinders = na
+displacement = +horsepower, +weigth, -acceleration
+horsepower = +weight, - acceleration, -year
+origin = na
+
+

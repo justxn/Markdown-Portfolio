@@ -1,0 +1,111 @@
+---
+title: "Homework 1"
+author: "Justin Barreras - jab180008"
+date: "1/31/2021"
+output: html_document
+---
+
+
+## Step 1
+
+```{r}
+library(MASS)
+data(Boston)
+str(Boston)
+```
+The data provided by the Boston data set consists of many factors from crime per capita to property tax rates to pupil to teacher ratio. All of these factors contribute to the values of certain suburbs by town and how they can correlate to each other. 
+
+## Step 2
+Printing first couple lines
+```{r}
+head(Boston)
+```
+Printing last two rows
+```{r}
+tail(Boston, n=2)
+```
+Printing row 5
+```{r}
+Boston[5,]
+```
+Printing column one
+```{r}
+head(Boston[1])
+```
+Printing all variable names
+```{r}
+variable.names(Boston)
+```
+## Step 3
+Printing mean, median, and range. 
+```{r}
+mean(Boston$crim)
+median(Boston$crim)
+range(Boston$crim)
+```
+## Step 4
+```{r}
+hist(Boston$crim,
+     main = "Histogram of frequency in crime per capita",
+     xlab = "Crime per capita",
+     xlim = c(0,90),
+     ylim = c(0, 100))
+```
+
+The Histogram shows that there is a much higher frequency of low crime per capita areas, but there are areas where the crime per capita is much higher on the range with less frequency. 
+
+## Step 5
+```{r}
+cor(Boston$crim, Boston$medv)
+```
+The correlation between crime per capita and the median house value are inversely related. When the crime rate is high, the value of the house is much lower. The crime rate could be one of the dominating factors to determine the value of a house. 
+
+## Step 6
+
+```{r}
+plot(Boston$rm, Boston$medv, main = "Median Value by Num of Rooms", ylab =  "Median Value of Home in $1000s", xlab = "Number of rooms per dwelling",
+     col = "blue")
+```
+
+```{r}
+cor(Boston$rm, Boston$medv)
+```
+Both the plot and the correlation function show that the number of rooms is a strong influence as to when the number of rooms goes up, the higher the value of the dwelling. 
+
+## Step 7
+Plot to show if the river is a factor.
+```{r}
+plot(Boston$chas, Boston$medv, main = "Is Charles River a factor?",xlab = "Chas value",ylab = "Medain House value by 1000s")
+```
+
+```{r}
+cor(Boston$medv, Boston$chas)
+```
+More than often higher amount of low income houses are among the houses that are correlated with the River. 
+
+## Step 8
+Rad is an index variable which is essentially a variable compiled of another set of variables. Houses with a high index have a much better accessibility to highways which could increase travel and value of life.
+```{r}
+summary(Boston$rad)
+unique(Boston$rad)
+sum(Boston$rad > 23)
+```
+132 out of 506 households have a value of 24 for the access to highways. 26% of the households have strong access to highways. 
+
+## Step 9
+
+```{r}
+far <- Boston$rad > 23
+plot(Boston$medv, far, main = "Accessibility to highways by house price", xlab ="Household price" ,ylab ="Acess to Highways", type = "p" )
+```
+
+The Graph shows that a majority of low household to middle house price have access to highways. However, most of the high end house prices do not have strong access to highways. 
+
+## Step 10
+
+```{r}
+summary(Boston[c(1,6,13,14)])
+which.max(Boston$medv)
+Boston[162, c(1,6,13,14)]
+```
+This neighborhood with the highest median value has a below mean and median crime rate. It does have the average highest rooms and has the absolute minimum status of the population. This could show that the amount of rooms is much more of a factor over the crime rate. 

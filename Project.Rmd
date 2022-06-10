@@ -1,0 +1,78 @@
+---
+title: "jab180008-Project1"
+author: "Justin Barreras - jab180008"
+date: "2/28/2021"
+output: html_document
+---
+## Project Component: Logistic Regression
+```{r}
+```
+
+
+```{r}
+df <- read.csv("titanic_project.csv")
+train <- df[1:900,]
+test <- df[901:1046,]
+```
+
+
+```{r}
+start1 <- Sys.time()
+glm1 <- glm(survived~pclass, data = train, family = "binomial")
+summary(glm1)
+print("These are the coefficients")
+dummy.coef(glm1)
+t1 <- predict(glm1, newdata = test, type = "response")
+end1 <- Sys.time()
+t1 <- ifelse(t1 > 0.5, 1,0)
+t1
+##predicting on the test data
+conf_matr <- table(t1, test$survived)
+conf_matr
+##computing the accuracy
+acc <- mean(t1==test$survived)
+print(paste("The model has shown to only have this accuracy: " ,acc))
+library(caret)
+print(paste("The model has this True Positive rate/sensitivity: ", sensitivity(conf_matr)))
+print(paste("However the model has this true negative rate/specificity: ", specificity(conf_matr)))
+print(paste("THe total amount of time (in minutes) it took the ML algorithm is :", end1 - start1))
+```
+Now testing on the test data.
+
+
+## Project Component: Naive Bayes
+
+I will be using the same test and train data from the previous component. 
+
+```{r}
+library(e1071)
+start2 <- Sys.time()
+##train model
+nb1 <- naiveBayes(as.factor(survived)~as.factor(pclass)+sex+age, data = train)
+##output model
+nb1
+##test model
+t2 <- predict(nb1, newdata = test, type = "class")
+end2 <- Sys.time()
+##output metrics
+cm2 <- table(t2, test$survived)
+cm2
+print(paste("We have an accuracy of : ", mean(t2==test$survived)))
+print(paste("The model has this True Positive rate/sensitivity: ", sensitivity(cm2)))
+print(paste("The model also has this true negative rate/specificity: ", specificity(cm2)))
+print(paste("The total amount of time(in minutes) Naive Bayes took was :", end2-start2))
+```
+```{r}
+hist(df$age)
+hist(df$pclass)
+
+ggplot(df, aes(x = survived, fill=pclass)) +
+ geom_bar(position = position_dodge()) +
+ geom_text(stat='count', 
+           aes(label=stat(count)), 
+           position = position_dodge(width=1), 
+           vjust=-0.5)+
+ theme_classic()
+ggplot(df, aes(x = age)) +
+ geom_density(fill='coral')
+```
